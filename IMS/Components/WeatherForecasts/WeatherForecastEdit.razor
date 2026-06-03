@@ -1,0 +1,212 @@
+@page "/weather-forecasts/edit/{id:int}"
+@inject IMediator Mediator
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit Weather Forecast</PageTitle>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h1>Edit Weather Forecast</h1>
+
+            @if (isLoading)
+            {
+                <div class="alert alert-info">Loading forecast...</div>
+            }
+            else if (forecast == null)
+            {
+                <div class="alert alert-danger">Forecast not found.</div>
+            }
+            else
+            {
+                <EditForm Model="@command" OnValidSubmit="@HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
+                                        <InputDate id="date" class="form-control" @bind-Value="command.Date" />
+                                        <ValidationMessage For="@(() => command.Date)" class="text-danger" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="location" class="form-label">Location <span class="text-danger">*</span></label>
+                                        <InputText id="location" class="form-control" @bind-Value="command.Location" placeholder="e.g., New York" />
+                                        <ValidationMessage For="@(() => command.Location)" class="text-danger" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="temperature" class="form-label">Temperature (°C) <span class="text-danger">*</span></label>
+                                        <InputNumber id="temperature" class="form-control" @bind-Value="command.TemperatureCelsius" />
+                                        <ValidationMessage For="@(() => command.TemperatureCelsius)" class="text-danger" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="condition" class="form-label">Condition</label>
+                                        <InputSelect id="condition" class="form-control" @bind-Value="command.Condition">
+                                            <option value="">Select a condition</option>
+                                            <option value="Sunny">Sunny</option>
+                                            <option value="Cloudy">Cloudy</option>
+                                            <option value="Rainy">Rainy</option>
+                                            <option value="Snowy">Snowy</option>
+                                            <option value="Stormy">Stormy</option>
+                                            <option value="Foggy">Foggy</option>
+                                        </InputSelect>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="summary" class="form-label">Summary <span class="text-danger">*</span></label>
+                                <InputTextArea id="summary" class="form-control" @bind-Value="command.Summary" rows="3" placeholder="Describe the weather forecast..." />
+                                <ValidationMessage For="@(() => command.Summary)" class="text-danger" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="humidity" class="form-label">Humidity (%)</label>
+                                        <InputNumber id="humidity" class="form-control" @bind-Value="command.Humidity" min="0" max="100" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="windspeed" class="form-label">Wind Speed (km/h)</label>
+                                        <InputNumber id="windspeed" class="form-control" @bind-Value="command.WindSpeed" min="0" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <small>Created: @forecast.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</small>
+                                        @if (forecast.UpdatedAt.HasValue)
+                                        {
+                                            <br />
+                                            <small>Last Updated: @forecast.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss")</small>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">@errorMessage</div>
+                    }
+
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span>Updating...</span>
+                            }
+                            else
+                            {
+                                <span>Update Forecast</span>
+                            }
+                        </button>
+                        <a href="/weather-forecasts" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private WeatherForecastDto? forecast;
+    private UpdateWeatherForecastCommand command = new();
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadForecast();
+    }
+
+    private async Task LoadForecast()
+    {
+        try
+        {
+            isLoading = true;
+            var result = await Mediator.Send(new GetWeatherForecastByIdQuery(Id));
+
+            if (result.IsSuccess && result.Data != null)
+            {
+                forecast = result.Data;
+
+                // Populate command with existing data
+                command.Id = forecast.Id;
+                command.Date = forecast.Date;
+                command.TemperatureCelsius = forecast.TemperatureCelsius;
+                command.Summary = forecast.Summary;
+                command.Condition = forecast.Condition;
+                command.Humidity = forecast.Humidity;
+                command.WindSpeed = forecast.WindSpeed;
+                command.Location = forecast.Location;
+            }
+            else
+            {
+                errorMessage = result.Message ?? "Forecast not found";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading forecast: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSubmitting = true;
+            errorMessage = null;
+
+            var result = await Mediator.Send(command);
+
+            if (result.IsSuccess)
+            {
+                NavigationManager.NavigateTo("/weather-forecasts");
+            }
+            else
+            {
+                errorMessage = result.Message ?? "Failed to update forecast";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating forecast: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}
+
+@using Application.Features.WeatherForecasts.Commands
+@using Application.Features.WeatherForecasts.Queries
+@using Application.DTO.WeatherForecast
+@using MediatR

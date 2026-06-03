@@ -1,0 +1,201 @@
+@page "/weather-forecasts"
+@inject IMediator Mediator
+@inject NavigationManager NavigationManager
+
+<PageTitle>Weather Forecasts</PageTitle>
+
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col">
+            <h1>Weather Forecasts</h1>
+        </div>
+        <div class="col-auto">
+            <a href="/weather-forecasts/create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Forecast
+            </a>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="alert alert-info">Loading weather forecasts...</div>
+    }
+    else if (forecasts == null || forecasts.Count == 0)
+    {
+        <div class="alert alert-warning">No weather forecasts found. <a href="/weather-forecasts/create">Create one now</a></div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date</th>
+                        <th>Location</th>
+                        <th>Temperature</th>
+                        <th>Condition</th>
+                        <th>Summary</th>
+                        <th>Humidity</th>
+                        <th>Wind Speed</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var forecast in forecasts)
+                    {
+                        <tr>
+                            <td>@forecast.Date.ToString("yyyy-MM-dd")</td>
+                            <td>@forecast.Location</td>
+                            <td>
+                                @forecast.TemperatureCelsius°C
+                                <small class="text-muted">(@forecast.TemperatureFahrenheit°F)</small>
+                            </td>
+                            <td>@forecast.Condition</td>
+                            <td>@forecast.Summary</td>
+                            <td>@forecast.Humidity.ToString("0.00")%</td>
+                            <td>@forecast.WindSpeed.ToString("0.00") km/h</td>
+                            <td>
+                                <a href="/weather-forecasts/edit/@forecast.Id" class="btn btn-sm btn-warning" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button class="btn btn-sm btn-danger" @onclick="() => ConfirmDelete(forecast.Id)" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" @onclick="ClearError"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @successMessage
+            <button type="button" class="btn-close" @onclick="ClearSuccess"></button>
+        </div>
+    }
+</div>
+
+@if (showDeleteConfirm)
+{
+    <div class="modal d-block" style="display: block; background-color: rgba(0,0,0,.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Forecast</h5>
+                    <button type="button" class="btn-close" @onclick="CancelDelete"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this weather forecast?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDeleteOk">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<WeatherForecastDto>? forecasts;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool showDeleteConfirm = false;
+    private int deleteId = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadForecasts();
+    }
+
+    private async Task LoadForecasts()
+    {
+        try
+        {
+            isLoading = true;
+            var result = await Mediator.Send(new GetAllWeatherForecastsQuery());
+
+            if (result.IsSuccess)
+            {
+                forecasts = result.Data ?? [];
+            }
+            else
+            {
+                errorMessage = result.Message ?? "Failed to load forecasts";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading forecasts: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ConfirmDelete(int id)
+    {
+        deleteId = id;
+        showDeleteConfirm = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirm = false;
+        deleteId = 0;
+    }
+
+    private async Task ConfirmDeleteOk()
+    {
+        try
+        {
+            var result = await Mediator.Send(new DeleteWeatherForecastCommand(deleteId));
+
+            if (result.IsSuccess)
+            {
+                successMessage = "Weather forecast deleted successfully";
+                await LoadForecasts();
+            }
+            else
+            {
+                errorMessage = result.Message ?? "Failed to delete forecast";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting forecast: {ex.Message}";
+        }
+        finally
+        {
+            CancelDelete();
+        }
+    }
+
+    private void ClearError()
+    {
+        errorMessage = null;
+    }
+
+    private void ClearSuccess()
+    {
+        successMessage = null;
+    }
+}
+
+@using Application.Features.WeatherForecasts.Queries
+@using Application.Features.WeatherForecasts.Commands
+@using Application.DTO.WeatherForecast
+@using MediatR
