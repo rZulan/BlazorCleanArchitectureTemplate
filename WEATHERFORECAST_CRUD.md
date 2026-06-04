@@ -1,5 +1,8 @@
 # WeatherForecast CRUD Implementation Guide
 
+> **Repository:** [BlazorCleanArchitectureTemplate](https://github.com/rZulan/BlazorCleanArchitectureTemplate)  
+> This guide documents the complete CRUD implementation using WeatherForecast as a working example.
+
 ## Overview
 
 A complete CRUD (Create, Read, Update, Delete) system for WeatherForecast has been implemented across all clean architecture layers with full Blazor UI integration.

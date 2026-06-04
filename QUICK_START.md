@@ -1,5 +1,8 @@
 # Quick Start Guide - Adding Features to Clean Architecture
 
+> **Repository:** [BlazorCleanArchitectureTemplate](https://github.com/rZulan/BlazorCleanArchitectureTemplate)  
+> This guide demonstrates how to add new features following the clean architecture pattern using the WeatherForecast example.
+
 ## File Template: Query Handler
 
 Create a new file: `Application/Features/{FeatureName}/Queries/Get{FeatureName}Query.cs`
@@ -19,9 +22,9 @@ public class Get{FeatureName}Query : IRequest<Result<List<{FeatureName}Dto>>>
 
 public class Get{FeatureName}QueryHandler : IRequestHandler<Get{FeatureName}Query, Result<List<{FeatureName}Dto>>>
 {
-	private readonly IRepository<{FeatureName}> _repository;
+	private readonly I{FeatureName}Repository _repository;
 
-	public Get{FeatureName}QueryHandler(IRepository<{FeatureName}> repository)
+	public Get{FeatureName}QueryHandler(I{FeatureName}Repository repository)
 	{
 		_repository = repository;
 	}
@@ -68,9 +71,9 @@ public class Create{FeatureName}Command : IRequest<Result<{FeatureName}Dto>>
 
 public class Create{FeatureName}CommandHandler : IRequestHandler<Create{FeatureName}Command, Result<{FeatureName}Dto>>
 {
-	private readonly IRepository<{FeatureName}> _repository;
+	private readonly I{FeatureName}Repository _repository;
 
-	public Create{FeatureName}CommandHandler(IRepository<{FeatureName}> repository)
+	public Create{FeatureName}CommandHandler(I{FeatureName}Repository repository)
 	{
 		_repository = repository;
 	}

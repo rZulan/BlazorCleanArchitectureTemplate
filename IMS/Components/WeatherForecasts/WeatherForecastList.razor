@@ -1,4 +1,10 @@
 @page "/weather-forecasts"
+
+@using Application.Features.WeatherForecasts.Queries
+@using Application.Features.WeatherForecasts.Commands
+@using Application.DTO.WeatherForecast
+@using MediatR
+
 @inject IMediator Mediator
 @inject NavigationManager NavigationManager
 
@@ -194,8 +200,3 @@
         successMessage = null;
     }
 }
-
-@using Application.Features.WeatherForecasts.Queries
-@using Application.Features.WeatherForecasts.Commands
-@using Application.DTO.WeatherForecast
-@using MediatR

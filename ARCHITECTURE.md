@@ -1,5 +1,8 @@
 # IMS Blazor Clean Architecture Documentation
 
+> **Repository:** [BlazorCleanArchitectureTemplate](https://github.com/rZulan/BlazorCleanArchitectureTemplate)  
+> This is a custom implementation of a Blazor Clean Architecture template.
+
 ## Overview
 
 The IMS Blazor project has been restructured following **Uncle Bob's Clean Architecture** principles with four distinct layers:
